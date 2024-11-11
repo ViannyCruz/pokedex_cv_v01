@@ -54,7 +54,74 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+# The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/background_list/normal.png
+    - assets/background_list/fire.png
+    - assets/background_list/water.png
+    - assets/background_list/electric.png
+    - assets/background_list/grass.png
+    - assets/background_list/ice.png
+    - assets/background_list/fighting.png
+    - assets/background_list/poison.png
+    - assets/background_list/ground.png
+    - assets/background_list/flying.png
+    - assets/background_list/psychic.png
+    - assets/background_list/bug.png
+    - assets/background_list/rock.png
+    - assets/background_list/ghost.png
+    - assets/background_list/dragon.png
+    - assets/background_list/dark.png
+    - assets/background_list/steel.png
+    - assets/background_list/fairy.png
+    - assets/general/white_pokeball.png
+    - assets/types_icons/normal.png
+    - assets/types_icons/fire.png
+    - assets/types_icons/water.png
+    - assets/types_icons/electric.png
+    - assets/types_icons/grass.png
+    - assets/types_icons/ice.png
+    - assets/types_icons/fighting.png
+    - assets/types_icons/poison.png
+    - assets/types_icons/ground.png
+    - assets/types_icons/flying.png
+    - assets/types_icons/psychic.png
+    - assets/types_icons/bug.png
+    - assets/types_icons/rock.png
+    - assets/types_icons/ghost.png
+    - assets/types_icons/dragon.png
+    - assets/types_icons/dark.png
+    - assets/types_icons/steel.png
+    - assets/types_icons/fairy.png
+    - assets/types_large/normal.png
+    - assets/types_large/fire.png
+    - assets/types_large/water.png
+    - assets/types_large/electric.png
+    - assets/types_large/grass.png
+    - assets/types_large/ice.png
+    - assets/types_large/fighting.png
+    - assets/types_large/poison.png
+    - assets/types_large/ground.png
+    - assets/types_large/flying.png
+    - assets/types_large/psychic.png
+    - assets/types_large/bug.png
+    - assets/types_large/rock.png
+    - assets/types_large/ghost.png
+    - assets/types_large/dragon.png
+    - assets/types_large/dark.png
+    - assets/types_large/steel.png
+    - assets/types_large/fairy.png
+    - assets/types_large/all.png
+    - assets/generations/gen1.png
+    - assets/generations/gen2.png
+    - assets/generations/gen3.png
+    - assets/generations/gen4.png
+    - assets/generations/gen5.png
+    - assets/generations/gen6.png
+    - assets/generations/gen7.png
+    - assets/generations/gen8.png
+    - assets/generations/gen9.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

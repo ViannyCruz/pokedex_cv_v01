@@ -14,8 +14,9 @@ class MyApp extends StatelessWidget {
       client: client,
       child: MaterialApp(
         title: 'Pokédex',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          useMaterial3: false,
         ),
         home: PokemonListScreen(),
       ),
