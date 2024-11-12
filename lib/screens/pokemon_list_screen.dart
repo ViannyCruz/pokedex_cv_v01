@@ -36,6 +36,15 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }).toList();
   }
 
+  List<dynamic> filterByGeneration(List<dynamic> pokemons, int generation) {
+    if (generation == 0) {
+      return pokemons;
+    }
+    return pokemons.where((pokemon) {
+      return pokemon['pokemon_v2_pokemonspecy']['generation_id'] == generation;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,6 +77,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                   if (_originalPokemons != null) {
                     _filteredPokemons = filterByType(_originalPokemons!, _filterType);
                     _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
+                    _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                   }
                   _scrollController.jumpTo(0); // Volver al inicio de la lista
                 });
@@ -138,6 +148,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           if (_originalPokemons != null) {
                             _filteredPokemons = filterByType(_originalPokemons!, _filterType);
                             _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
+                            _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                           }
                           _scrollController.jumpTo(0); // Volver al inicio de la lista
                         });
@@ -220,12 +231,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                 _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
 
                 // Filtrar por generación
-                _filteredPokemons = _filteredPokemons!.where((pokemon) {
-                  bool generationMatch = _filterGeneration == 0 ||
-                      pokemon['pokemon_v2_pokemonspecy']['generation_id'] ==
-                          _filterGeneration;
-                  return generationMatch;
-                }).toList();
+                _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
 
                 return ListView.builder(
                   key: _listViewKey, // Usa la clave única para forzar la reconstrucción
