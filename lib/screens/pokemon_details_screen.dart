@@ -29,6 +29,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Detalles del Pokémon'),
+        backgroundColor: Colors.red, // Cambia el color de fondo a rojo
       ),
       body: Query(
         options: QueryOptions(
@@ -50,21 +51,78 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
             opacity: _visible ? 1.0 : 0.0,
             duration: Duration(milliseconds: 500),
             child: SingleChildScrollView(
+              padding: EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.network(
-                    'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon['id']}.png',
+                  Center(
+                    child: Image.network(
+                      'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon['id']}.png',
+                      height: 200,
+                      width: 200,
+                    ),
                   ),
-                  Text('Nombre: ${pokemon['name']}'),
-                  Text('Tipo: ${pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name']}'),
-                  Text('Estadísticas:'),
-                  ...pokemon['pokemon_v2_pokemonstats'].map((stat) => Text('${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}')),
-                  Text('Habilidades:'),
-                  ...pokemon['pokemon_v2_pokemonabilities'].map((ability) => Text(ability['pokemon_v2_ability']['name'])),
-                  Text('Evoluciones:'),
-                  ...pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'].map((evolution) => Text(evolution['name'])),
-                  Text('Movimientos:'),
-                  ...pokemon['pokemon_v2_pokemonmoves'].map((move) => Text(move['pokemon_v2_move']['name'])),
+                  SizedBox(height: 20),
+                  Text(
+                    'Nombre: ${pokemon['name']}',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Tipo: ${pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name']}',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Estadísticas:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  ...pokemon['pokemon_v2_pokemonstats'].map((stat) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      Slider(
+                        value: stat['base_stat'].toDouble(),
+                        min: 0,
+                        max: 255,
+                        divisions: 255,
+                        activeColor: Colors.red,
+                        inactiveColor: Colors.grey,
+                        label: stat['base_stat'].toString(),
+                        onChanged: (double value) {},
+                      ),
+                    ],
+                  )),
+                  SizedBox(height: 20),
+                  Text(
+                    'Habilidades:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  ...pokemon['pokemon_v2_pokemonabilities'].map((ability) => Text(
+                    ability['pokemon_v2_ability']['name'],
+                    style: TextStyle(fontSize: 16),
+                  )),
+                  SizedBox(height: 20),
+                  Text(
+                    'Evoluciones:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  ...pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'].map((evolution) => Text(
+                    evolution['name'],
+                    style: TextStyle(fontSize: 16),
+                  )),
+                  SizedBox(height: 20),
+                  Text(
+                    'Movimientos:',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  ...pokemon['pokemon_v2_pokemonmoves'].map((move) => Text(
+                    move['pokemon_v2_move']['name'],
+                    style: TextStyle(fontSize: 16),
+                  )),
                 ],
               ),
             ),
