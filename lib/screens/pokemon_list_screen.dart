@@ -11,10 +11,12 @@ class PokemonListScreen extends StatefulWidget {
 class _PokemonListScreenState extends State<PokemonListScreen> {
   String _filterType = '';
   int _filterGeneration = 0;
+  String _searchQuery = ''; // Consulta de búsqueda
   List<dynamic>? _originalPokemons; // Lista original de Pokémon
   List<dynamic>? _filteredPokemons; // Lista filtrada de Pokémon
   Key _listViewKey = UniqueKey(); // Clave única para el ListView
   ScrollController _scrollController = ScrollController(); // Controlador de scroll
+  TextEditingController _searchController = TextEditingController(); // Controlador de texto para búsqueda
 
   List<dynamic> filterByType(List<dynamic> pokemons, String type) {
     if (type.isEmpty) {
@@ -22,6 +24,15 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }
     return pokemons.where((pokemon) {
       return pokemon['pokemon_v2_pokemontypes'].any((typeInfo) => typeInfo['pokemon_v2_type']['name'] == type);
+    }).toList();
+  }
+
+  List<dynamic> filterBySearchQuery(List<dynamic> pokemons, String query) {
+    if (query.isEmpty) {
+      return pokemons;
+    }
+    return pokemons.where((pokemon) {
+      return pokemon['name'].toLowerCase().contains(query.toLowerCase());
     }).toList();
   }
 
@@ -38,6 +49,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
+              controller: _searchController, // Controlador de texto para búsqueda
               cursorColor: Colors.red, // Cambia el color del cursor a rojo
               decoration: InputDecoration(
                 hintText: 'Buscar un pokemon...',
@@ -51,7 +63,14 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                 ),
               ),
               onChanged: (value) {
-                // Acción cuando se cambia el texto en la barra de búsqueda
+                setState(() {
+                  _searchQuery = value; // Actualiza la consulta de búsqueda
+                  if (_originalPokemons != null) {
+                    _filteredPokemons = filterByType(_originalPokemons!, _filterType);
+                    _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
+                  }
+                  _scrollController.jumpTo(0); // Volver al inicio de la lista
+                });
               },
             ),
           ),
@@ -118,6 +137,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           _filterType = newValue!;
                           if (_originalPokemons != null) {
                             _filteredPokemons = filterByType(_originalPokemons!, _filterType);
+                            _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
                           }
                           _scrollController.jumpTo(0); // Volver al inicio de la lista
                         });
@@ -195,6 +215,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
                 // Filtrar por tipo
                 _filteredPokemons = filterByType(_originalPokemons!, _filterType);
+
+                // Filtrar por búsqueda
+                _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
 
                 // Filtrar por generación
                 _filteredPokemons = _filteredPokemons!.where((pokemon) {
