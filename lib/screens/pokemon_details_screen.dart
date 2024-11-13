@@ -50,85 +50,189 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           return AnimatedOpacity(
             opacity: _visible ? 1.0 : 0.0,
             duration: Duration(milliseconds: 500),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Image.network(
-                      'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon['id']}.png',
-                      height: 200,
-                      width: 200,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Nombre: ${pokemon['name']}',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Tipo: ${pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name']}',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Estadísticas:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  ...pokemon['pokemon_v2_pokemonstats'].map((stat) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}',
-                        style: TextStyle(fontSize: 16),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Imagen principal
+                              Container(
+                                height: 140, // Ajusta la altura según tus necesidades
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 0, // Ajusta el margen vertical aquí
+                                      left: 0,
+                                      child: Stack(
+                                        children: [
+                                          // Fondo de la CircleAvatar
+                                          Container(
+                                            width: 500, // Ajusta el ancho según tus necesidades
+                                            height: 100, // Ajusta la altura según tus necesidades
+                                            decoration: BoxDecoration(
+                                              image: DecorationImage(
+                                                image: AssetImage('assets/background_list/' + pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name'] + '.png'),
+                                                fit: BoxFit.cover, // Ajusta la imagen para cubrir el contenedor
+                                              ),
+                                            ),
+                                          ),
+                                          // CircleAvatar con el fondo gris
+                                          Positioned(
+                                            top: -15,
+                                            left: 15,
+                                            child: CircleAvatar(
+                                              radius: 70,
+                                              backgroundColor: const Color(0xFFFAFAFA),
+                                              backgroundImage: NetworkImage(
+                                                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon['id']}.png',
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${pokemon['name']}'.toUpperCase(),
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                              Row(
+                                children: [
+                                  // Imágenes a la izquierda
+                                  Expanded(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Image.asset(
+                                          '${'assets/types_large/' + pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name']}.png',
+                                          height: 32,
+                                          width: 100,
+                                        ),
+                                        SizedBox(width: 0), // Espacio entre las imágenes
+                                        if (pokemon['pokemon_v2_pokemontypes'].length == 2)
+                                          Image.asset(
+                                            'assets/types_large/${pokemon['pokemon_v2_pokemontypes'][1]['pokemon_v2_type']['name']}.png',
+                                            height: 32,
+                                            width: 100,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      Slider(
-                        value: stat['base_stat'].toDouble(),
-                        min: 0,
-                        max: 255,
-                        divisions: 255,
-                        activeColor: Colors.red,
-                        inactiveColor: Colors.grey,
-                        label: stat['base_stat'].toString(),
-                        onChanged: (double value) {},
+                      SliverPadding(
+                        padding: EdgeInsets.all(16.0),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate(
+                            [
+                              SizedBox(height: 0),
+                              // Contenedor con fondo blanco y sombra para cada conjunto de información
+                              _buildInfoContainer(
+                                'Estadísticas',
+                                pokemon['pokemon_v2_pokemonstats'].map((stat) => '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}').join('\n'),
+                              ),
+                              SizedBox(height: 20),
+                              _buildInfoContainer(
+                                'Habilidades',
+                                pokemon['pokemon_v2_pokemonabilities'].map((ability) => ability['pokemon_v2_ability']['name']).join('\n'),
+                              ),
+                              SizedBox(height: 20),
+                              _buildInfoContainer(
+                                'Evoluciones',
+                                pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'].map((evolution) => evolution['name']).join('\n'),
+                              ),
+                              SizedBox(height: 20),
+                              _buildInfoContainer(
+                                'Movimientos',
+                                pokemon['pokemon_v2_pokemonmoves'].map((move) => move['pokemon_v2_move']['name']).join('\n'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
-                  )),
-                  SizedBox(height: 20),
-                  Text(
-                    'Habilidades:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  ...pokemon['pokemon_v2_pokemonabilities'].map((ability) => Text(
-                    ability['pokemon_v2_ability']['name'],
-                    style: TextStyle(fontSize: 16),
-                  )),
-                  SizedBox(height: 20),
-                  Text(
-                    'Evoluciones:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  ...pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'].map((evolution) => Text(
-                    evolution['name'],
-                    style: TextStyle(fontSize: 16),
-                  )),
-                  SizedBox(height: 20),
-                  Text(
-                    'Movimientos:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  ...pokemon['pokemon_v2_pokemonmoves'].map((move) => Text(
-                    move['pokemon_v2_move']['name'],
-                    style: TextStyle(fontSize: 16),
-                  )),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildInfoContainer(String title, String content) {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 10),
+          if (title == 'Estadísticas')
+            _buildStatsSlider(content)
+          else
+            Text(
+              content,
+              style: TextStyle(fontSize: 16),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSlider(String content) {
+    List<String> stats = content.split('\n');
+    return Column(
+      children: stats.map((stat) {
+        List<String> parts = stat.split(': ');
+        String statName = parts[0];
+        int statValue = int.parse(parts[1]);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              statName,
+              style: TextStyle(fontSize: 16),
+            ),
+            Slider(
+              value: statValue.toDouble(),
+              min: 0,
+              max: 255,
+              divisions: 255,
+              label: statValue.toString(),
+              onChanged: (double value) {},
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 }

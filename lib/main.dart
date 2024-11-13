@@ -10,7 +10,7 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GraphQLProvider(
+    return GraphQLProvider( // Proporcionamos el cliente a todos los widgets hijos
       client: client,
       child: MaterialApp(
         title: 'Pokédex',
