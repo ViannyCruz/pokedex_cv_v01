@@ -79,9 +79,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                 setState(() { // El estado interno de un widget ha cambiado, reconstruimos
                   _searchQuery = value; // Actualiza la consulta de busqueda
                   if (_originalPokemons != null) {
-                    _filteredPokemons = filterByType(_originalPokemons!, _filterType);
+                    //_filteredPokemons = filterByType(_originalPokemons!, _filterType);
                     _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                    _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
+                    //_filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                   }
                   _scrollController.jumpTo(0); // Volver al inicio de la lista
                 });
@@ -151,8 +151,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           _filterType = newValue!;
                           if (_originalPokemons != null) {
                             _filteredPokemons = filterByType(_originalPokemons!, _filterType);
-                            _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                            _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
+                            //_filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
+                            //_filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                           }
                           _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
@@ -163,7 +163,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                 const SizedBox(width: 10),
                 Flexible(
                   child: Container(
-                    height: 40,// Ajusta el ancho del dropdown
+                    height: 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8.0),
                       border: Border.all(color: Colors.grey),
@@ -194,13 +194,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       onChanged: (int? newValue) {
                         setState(() {
                           _filterGeneration = newValue!;
-                          if (_filteredPokemons != null) {
-                            _filteredPokemons = _filteredPokemons!.where((pokemon) {
-                              bool generationMatch = _filterGeneration == 0 ||
-                                  pokemon['pokemon_v2_pokemonspecy']['generation_id'] ==
-                                      _filterGeneration;
-                              return generationMatch;
-                            }).toList();
+                          if (_originalPokemons != null) {
+                            _filteredPokemons = filterByType(_originalPokemons!, _filterType);
+                            _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
+                            _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                           }
                           _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
@@ -242,7 +239,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                   itemCount: _filteredPokemons?.length ?? 0,
                   itemBuilder: (context, index) {
                     if (_filteredPokemons == null || _filteredPokemons!.isEmpty) {
-                      return Center(child: Text('No Pokémon found'));
+                      return const Center(child: Text('No Pokémon found'));
                     }
                     var pokemon = _filteredPokemons![index];
                     String pokemonName = pokemon['name'].toUpperCase();
