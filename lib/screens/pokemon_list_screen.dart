@@ -288,7 +288,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                               bottom: 8,
                               right: 14,
                               child: Text(
-                                '# ${pokemon['id'].toString().padLeft(4, '0')}',
+                                '# ${pokemon['id'].toString().padLeft(5, '0')}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
