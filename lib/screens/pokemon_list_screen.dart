@@ -3,21 +3,23 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../queries.dart';
 import 'pokemon_details_screen.dart';
 
+// Clase principal que define la pantalla de lista de Pokémon como un StatefulWidget
 class PokemonListScreen extends StatefulWidget {
   @override
   _PokemonListScreenState createState() => _PokemonListScreenState();
 }
 
+// Estado de la pantalla de lista de Pokémon
 class _PokemonListScreenState extends State<PokemonListScreen> {
-  String _filterType = '';
-  int _filterGeneration = 0;
-  String _searchQuery = ''; // Consulta de búsqueda
-  List<dynamic>? _originalPokemons; // Lista original de Pokémon
-  List<dynamic>? _filteredPokemons; // Lista filtrada de Pokémon
-  Key _listViewKey = UniqueKey(); // Clave única para el ListView
-  ScrollController _scrollController = ScrollController(); // Controlador de scroll
-  TextEditingController _searchController = TextEditingController(); // Controlador de texto para búsqueda
+  String _filterType = ''; // Tipo de Pokemon seleccionado para filtrar
+  int _filterGeneration = 0; // Generación de Pokemon seleccionada para filtrar
+  String _searchQuery = ''; // Consulta de busqueda ingresada por el usuario
+  List<dynamic>? _originalPokemons; // Lista original de Pokémon obtenida de la API
+  List<dynamic>? _filteredPokemons; // Lista filtrada de Pokémon según los criterios de busqueda y filtro
+  final ScrollController _scrollController = ScrollController(); // Controlador de scroll para manejar el desplazamiento de la lista
+  final TextEditingController _searchController = TextEditingController(); // Controlador de texto para la barra de búsqueda
 
+  // Filtrar la lista de Pokemon por tipo
   List<dynamic> filterByType(List<dynamic> pokemons, String type) {
     if (type.isEmpty) {
       return pokemons;
@@ -27,6 +29,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }).toList();
   }
 
+  // Filtrar la lista de Pokémon por la consulta de busqueda
   List<dynamic> filterBySearchQuery(List<dynamic> pokemons, String query) {
     if (query.isEmpty) {
       return pokemons;
@@ -36,6 +39,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }).toList();
   }
 
+  // Función para filtrar la lista de Pokémon por generación
   List<dynamic> filterByGeneration(List<dynamic> pokemons, int generation) {
     if (generation == 0) {
       return pokemons;
@@ -58,10 +62,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
-              controller: _searchController, // Controlador de texto para búsqueda
-              cursorColor: Colors.red, // Cambia el color del cursor a rojo
+              controller: _searchController, // Controlador de texto para la barra de busqueda
+              cursorColor: Colors.red, // Cambiar el color del cursor a rojo
               decoration: InputDecoration(
-                hintText: 'Buscar un pokemon...',
+                hintText: 'Search for a pokemon...',
                 prefixIcon: const Icon(Icons.search, color: Colors.red),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(15.0),
@@ -71,9 +75,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                   borderSide: const BorderSide(color: Colors.red),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value; // Actualiza la consulta de búsqueda
+              onChanged: (value) { // Se esta intentando buscar un pokemon
+                setState(() { // El estado interno de un widget ha cambiado, reconstruimos
+                  _searchQuery = value; // Actualiza la consulta de busqueda
                   if (_originalPokemons != null) {
                     _filteredPokemons = filterByType(_originalPokemons!, _filterType);
                     _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
@@ -94,14 +98,14 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
               children: [
                 Flexible(
                   child: Container(
-                    height: 40,// Ajusta el ancho del dropdown
+                    height: 40,// Ajustamos el ancho del dropdown
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8.0),
                       border: Border.all(color: Colors.grey),
                     ),
                     child: DropdownButton<String>(
                       value: _filterType,
-                      hint: Text('Tipo', style: TextStyle(color: Colors.grey)),
+                      hint: const Text('Tipo', style: TextStyle(color: Colors.grey)),
                       underline: Container(), // Elimina la línea debajo del dropdown
                       isExpanded: true, // Permite que el dropdown se expanda
                       items: <String>[
@@ -150,7 +154,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                             _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
                             _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                           }
-                          _scrollController.jumpTo(0); // Volver al inicio de la lista
+                          _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
                       },
                     ),
@@ -198,7 +202,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                               return generationMatch;
                             }).toList();
                           }
-                          _scrollController.jumpTo(0); // Volver al inicio de la lista
+                          _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
                       },
                     ),
@@ -234,7 +238,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                 _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
 
                 return ListView.builder(
-                  key: _listViewKey, // Usa la clave única para forzar la reconstrucción
                   controller: _scrollController, // Usa el controlador de scroll
                   itemCount: _filteredPokemons?.length ?? 0,
                   itemBuilder: (context, index) {
@@ -250,8 +253,18 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => PokemonDetailsScreen(id: pokemon['id']),
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => PokemonDetailsScreen(id: pokemon['id']),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              var begin = const Offset(1.0, 0.0); // Comienza desde la derecha
+                              var end = Offset.zero;
+                              var curve = Curves.ease;
+                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
                           ),
                         );
                       },
@@ -260,7 +273,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             image: AssetImage('assets/background_list/' + pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name'] + '.png'),
-                            fit: BoxFit.cover, // Asegura que la imagen ocupe todo el contenedor
+                            fit: BoxFit.cover,
                           ),
                           borderRadius: BorderRadius.circular(12.0),
                           boxShadow: [

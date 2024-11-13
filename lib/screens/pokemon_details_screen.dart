@@ -8,7 +8,7 @@ class PokemonDetailsScreen extends StatefulWidget {
   const PokemonDetailsScreen({Key? key, required this.id}) : super(key: key);
 
   @override
-  _PokemonDetailsScreenState createState() => _PokemonDetailsScreenState();
+  _PokemonDetailsScreenState createState() => _PokemonDetailsScreenState(); // crear una instancia del estado asociado a este widget
 }
 
 class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
@@ -28,8 +28,8 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detalles del Pokémon'),
-        backgroundColor: Colors.red, // Cambia el color de fondo a rojo
+        title: const Text('Pokemon Details'),
+        backgroundColor: Colors.red,
       ),
       body: Query(
         options: QueryOptions(
@@ -63,22 +63,22 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                             children: [
                               // Imagen principal
                               Container(
-                                height: 140, // Ajusta la altura según tus necesidades
+                                height: 140,
                                 child: Stack(
                                   children: [
                                     Positioned(
-                                      top: 0, // Ajusta el margen vertical aquí
+                                      top: 0,
                                       left: 0,
                                       child: Stack(
                                         children: [
                                           // Fondo de la CircleAvatar
                                           Container(
-                                            width: 500, // Ajusta el ancho según tus necesidades
-                                            height: 100, // Ajusta la altura según tus necesidades
+                                            width: 500,
+                                            height: 100,
                                             decoration: BoxDecoration(
                                               image: DecorationImage(
                                                 image: AssetImage('assets/background_list/' + pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name'] + '.png'),
-                                                fit: BoxFit.cover, // Ajusta la imagen para cubrir el contenedor
+                                                fit: BoxFit.cover,
                                               ),
                                             ),
                                           ),
@@ -100,14 +100,14 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                                   ],
                                 ),
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Text(
                                 '${pokemon['name']}'.toUpperCase(),
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                               Row(
                                 children: [
-                                  // Imágenes a la izquierda
+                                  // Imegenes a la izquierda
                                   Expanded(
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.start,
@@ -117,7 +117,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                                           height: 32,
                                           width: 100,
                                         ),
-                                        SizedBox(width: 0), // Espacio entre las imágenes
+                                        const SizedBox(width: 0), // Espacio entre las imagenes
                                         if (pokemon['pokemon_v2_pokemontypes'].length == 2)
                                           Image.asset(
                                             'assets/types_large/${pokemon['pokemon_v2_pokemontypes'][1]['pokemon_v2_type']['name']}.png',
@@ -134,29 +134,28 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                         ),
                       ),
                       SliverPadding(
-                        padding: EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(16.0),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate(
                             [
-                              SizedBox(height: 0),
-                              // Contenedor con fondo blanco y sombra para cada conjunto de información
+                              const SizedBox(height: 0),
                               _buildInfoContainer(
-                                'Estadísticas',
+                                'Stats',
                                 pokemon['pokemon_v2_pokemonstats'].map((stat) => '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}').join('\n'),
                               ),
-                              SizedBox(height: 20),
+                              const SizedBox(height: 20),
                               _buildInfoContainer(
-                                'Habilidades',
+                                'Abilities',
                                 pokemon['pokemon_v2_pokemonabilities'].map((ability) => ability['pokemon_v2_ability']['name']).join('\n'),
                               ),
-                              SizedBox(height: 20),
+                              const SizedBox(height: 20),
                               _buildInfoContainer(
-                                'Evoluciones',
+                                'Evolutions',
                                 pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'].map((evolution) => evolution['name']).join('\n'),
                               ),
-                              SizedBox(height: 20),
+                              const SizedBox(height: 20),
                               _buildInfoContainer(
-                                'Movimientos',
+                                'Moves',
                                 pokemon['pokemon_v2_pokemonmoves'].map((move) => move['pokemon_v2_move']['name']).join('\n'),
                               ),
                             ],
@@ -176,7 +175,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
 
   Widget _buildInfoContainer(String title, String content) {
     return Container(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -184,7 +183,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -193,15 +192,15 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 10),
-          if (title == 'Estadísticas')
+          const SizedBox(height: 10),
+          if (title == 'Stats')
             _buildStatsSlider(content)
           else
             Text(
               content,
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
         ],
       ),
@@ -220,7 +219,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           children: [
             Text(
               statName,
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             Slider(
               value: statValue.toDouble(),
