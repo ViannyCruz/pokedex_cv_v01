@@ -8,7 +8,7 @@ class PokemonDetailsScreen extends StatefulWidget {
   const PokemonDetailsScreen({Key? key, required this.id}) : super(key: key);
 
   @override
-  _PokemonDetailsScreenState createState() => _PokemonDetailsScreenState(); // crear una instancia del estado asociado a este widget
+  _PokemonDetailsScreenState createState() => _PokemonDetailsScreenState();
 }
 
 class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
@@ -22,6 +22,15 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
         _visible = true;
       });
     });
+  }
+
+  void _navigateToPokemon(int id) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PokemonDetailsScreen(id: id),
+      ),
+    );
   }
 
   @override
@@ -46,6 +55,18 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           }
 
           var pokemon = result.data?['pokemon_v2_pokemon_by_pk'];
+          var evolutions = pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'];
+
+          // Procesar las evoluciones para incluir la información de las evoluciones siguientes
+          for (var evolution in evolutions) {
+            evolution['evolves_to'] = evolution['evolves_to'].map((evo) => evo).toList();
+          }
+
+          // Construir el árbol de evoluciones
+          var evolutionTree = _buildEvolutionTree(evolutions);
+
+          // Ordenar las evoluciones por ID
+          evolutions.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
 
           return AnimatedOpacity(
             opacity: _visible ? 1.0 : 0.0,
@@ -146,23 +167,47 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                               const SizedBox(height: 20),
                               _buildInfoContainer(
                                 'Abilities',
-                                pokemon['pokemon_v2_pokemonabilities'].map((ability) => ability['pokemon_v2_ability']['name']).join('\n'),
+                                pokemon['pokemon_v2_pokemonabilities'],
                               ),
                               const SizedBox(height: 20),
                               _buildInfoContainer(
                                 'Evolutions',
-                                pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'].map((evolution) => evolution['name']).join('\n'),
+                                _buildEvolutionChain(evolutionTree),
                               ),
                               const SizedBox(height: 20),
                               _buildInfoContainer(
                                 'Moves',
-                                pokemon['pokemon_v2_pokemonmoves'].map((move) => move['pokemon_v2_move']['name']).join('\n'),
+                                pokemon['pokemon_v2_pokemonmoves'],
                               ),
                             ],
                           ),
                         ),
                       ),
                     ],
+                  ),
+                ),
+                // Flecha izquierda
+                Positioned(
+                  top: MediaQuery.of(context).size.height / 2 - 24, // Centrado verticalmente
+                  left: 16, // Margen izquierdo
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    onPressed: () {
+                      if (widget.id > 1) {
+                        _navigateToPokemon(widget.id - 1);
+                      }
+                    },
+                  ),
+                ),
+                // Flecha derecha
+                Positioned(
+                  top: MediaQuery.of(context).size.height / 2 - 24, // Centrado verticalmente
+                  right: 16, // Margen derecho
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_forward),
+                    onPressed: () {
+                      _navigateToPokemon(widget.id + 1);
+                    },
                   ),
                 ),
               ],
@@ -173,7 +218,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 
-  Widget _buildInfoContainer(String title, String content) {
+  Widget _buildInfoContainer(String title, dynamic content) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -197,11 +242,17 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           const SizedBox(height: 10),
           if (title == 'Stats')
             _buildStatsSlider(content)
-          else
-            Text(
-              content,
-              style: const TextStyle(fontSize: 16),
-            ),
+          else if (title == 'Evolutions')
+            Center(child: content)
+          else if (title == 'Abilities')
+              _buildAbilitiesList(content)
+            else if (title == 'Moves')
+                _buildMovesList(content)
+              else
+                Text(
+                  content,
+                  style: const TextStyle(fontSize: 16),
+                ),
         ],
       ),
     );
@@ -229,6 +280,151 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
               label: statValue.toString(),
               onChanged: (double value) {},
             ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  List<dynamic> _buildEvolutionTree(List<dynamic> evolutions) {
+    Map<int, dynamic> evolutionMap = {};
+    List<dynamic> evolutionTree = [];
+
+    // Crear un mapa de evoluciones por ID
+    for (var evolution in evolutions) {
+      evolutionMap[evolution['id']] = evolution;
+    }
+
+    // Construir el árbol de evoluciones
+    for (var evolution in evolutions) {
+      if (evolution['evolves_to'] != null && evolution['evolves_to'].isNotEmpty) {
+        for (var nextEvolution in evolution['evolves_to']) {
+          evolutionMap[nextEvolution['id']]['parent'] = evolution;
+          evolution['evolves_to'] = evolution['evolves_to'].map((evo) => evolutionMap[evo['id']]).toList();
+        }
+      }
+    }
+
+    // Encontrar la raíz del árbol
+    for (var evolution in evolutions) {
+      if (evolution['parent'] == null) {
+        evolutionTree.add(evolution);
+      }
+    }
+
+    return evolutionTree;
+  }
+
+  Widget _buildEvolutionChain(List<dynamic> evolutions) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          for (var evolution in evolutions)
+            _buildEvolutionNode(evolution),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvolutionNode(dynamic evolution) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PokemonDetailsScreen(id: evolution['id']),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: NetworkImage(
+                  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evolution['id']}.png',
+                ),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            evolution['name'].toUpperCase(),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          if (evolution['evolves_to'] != null && evolution['evolves_to'].isNotEmpty)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                for (var nextEvolution in evolution['evolves_to'])
+                  _buildEvolutionNode(nextEvolution),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAbilitiesList(List<dynamic> abilities) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: abilities.map((ability) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              ability['pokemon_v2_ability']['name'],
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              ability['pokemon_v2_ability']['pokemon_v2_abilityeffecttexts'][0]['effect'],
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 10),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMovesList(List<dynamic> moves) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: moves.map((move) {
+        final moveData = move['pokemon_v2_move'];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              moveData['name'],
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              'Accuracy: ${moveData['accuracy'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            Text(
+              'Power: ${moveData['power'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            Text(
+              'PP: ${moveData['pp'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            Text(
+              'Damage Type: ${moveData['pokemon_v2_movedamageclass']?['name'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 10),
           ],
         );
       }).toList(),

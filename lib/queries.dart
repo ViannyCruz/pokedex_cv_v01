@@ -34,18 +34,42 @@ query GetPokemonDetails($id: Int!) {
     pokemon_v2_pokemonabilities {
       pokemon_v2_ability {
         name
+        pokemon_v2_abilityeffecttexts(where: {language_id: {_eq: 9}}) {
+          effect
+          short_effect
+        }
       }
     }
     pokemon_v2_pokemonspecy {
       pokemon_v2_evolutionchain {
         pokemon_v2_pokemonspecies {
+          id
           name
+          evolves_to: pokemon_v2_pokemonspecies {
+            id
+            name
+          }
         }
       }
     }
     pokemon_v2_pokemonmoves {
       pokemon_v2_move {
         name
+        accuracy
+        power
+        pp
+        type_id
+        pokemon_v2_movedamageclass {
+          name
+        }
+        pokemon_v2_movetarget {
+          name
+        }
+        pokemon_v2_moveeffect {
+          pokemon_v2_moveeffecteffecttexts(where: {language_id: {_eq: 9}}) {
+            effect
+          }
+        }
       }
     }
   }
