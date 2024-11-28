@@ -1,6 +1,6 @@
 const String getPokemonList = r'''
-query GetPokemonList {
-  pokemon_v2_pokemon {
+query GetPokemonList($limit: Int!, $offset: Int!) {
+  pokemon_v2_pokemon(limit: $limit, offset: $offset) {
     id
     name
     pokemon_v2_pokemontypes {
@@ -12,11 +12,16 @@ query GetPokemonList {
       generation_id
     }
   }
+  pokemon_v2_pokemon_aggregate {
+    aggregate {
+      count
+    }
+  }
 }
 ''';
 
 const String getPokemonDetails = r'''
-query GetPokemonDetails($id: Int!) {
+query GetPokemonDetails($id: Int!, $limit: Int!, $offset: Int!) {
   pokemon_v2_pokemon_by_pk(id: $id) {
     id
     name
@@ -52,7 +57,7 @@ query GetPokemonDetails($id: Int!) {
         }
       }
     }
-    pokemon_v2_pokemonmoves {
+    pokemon_v2_pokemonmoves(limit: $limit, offset: $offset) {
       pokemon_v2_move {
         name
         accuracy
@@ -70,6 +75,11 @@ query GetPokemonDetails($id: Int!) {
             effect
           }
         }
+      }
+    }
+    pokemon_v2_pokemonmoves_aggregate {
+      aggregate {
+        count
       }
     }
   }

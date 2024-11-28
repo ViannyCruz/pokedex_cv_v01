@@ -16,8 +16,80 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   String _searchQuery = ''; // Consulta de busqueda ingresada por el usuario
   List<dynamic>? _originalPokemons; // Lista original de Pokémon obtenida de la API
   List<dynamic>? _filteredPokemons; // Lista filtrada de Pokémon según los criterios de busqueda y filtro
-  final ScrollController _scrollController = ScrollController(); // Controlador de scroll para manejar el desplazamiento de la lista
+  ScrollController _scrollController = ScrollController(); // Controlador de scroll para manejar el desplazamiento de la lista
   final TextEditingController _searchController = TextEditingController(); // Controlador de texto para la barra de búsqueda
+  int _limit = 20;
+  int _offset = 0;
+  List<dynamic> _Pokemons = [];
+  bool _isLoadingMore = false;
+  int _totalPokemons = 0;
+  FetchMore? fetchMore;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    _fetchPokemons();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !_isLoadingMore && _Pokemons.length < _totalPokemons) {
+      _loadMorePokemons();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchPokemons();
+  }
+
+  Future<void> _fetchPokemons() async {
+    // Ensure context is used after didChangeDependencies
+    GraphQLClient client = GraphQLProvider.of(context).value;
+    final result = await client.query(
+      QueryOptions(
+        document: gql(getPokemonList),
+        variables: {'limit': _limit, 'offset': _offset},
+      ),
+    );
+    if (result.hasException) {
+      setState(() {
+        _isLoadingMore = false;
+      });
+      return;
+    }
+    setState(() {
+      if (_offset == 0) {
+        _originalPokemons = result.data?['pokemon_v2_pokemon'] ?? [];
+        _totalPokemons = result.data?['pokemon_v2_pokemon_aggregate']['aggregate']['count'] ?? 0;
+        _Pokemons = List.from(_originalPokemons!);
+      } else {
+        _originalPokemons!.addAll(result.data?['pokemon_v2_pokemon'] ?? []);
+        _Pokemons = filterPokemons(_originalPokemons!);
+      }
+      _isLoadingMore = false;
+    });
+  }
+
+  Future<void> _loadMorePokemons() async {
+    if (_isLoadingMore || _Pokemons.length >= _totalPokemons) {
+      return;
+    }
+    setState(() {
+      _isLoadingMore = true;
+      _offset += _limit;
+    });
+    await _fetchPokemons();
+  }
+
+  List<dynamic> filterPokemons(List<dynamic> pokemons) {
+    List<dynamic> filtered = filterByType(pokemons, _filterType);
+    filtered = filterBySearchQuery(filtered, _searchQuery);
+    filtered = filterByGeneration(filtered, _filterGeneration);
+    return filtered;
+  }
 
   // Filtrar la lista de Pokemon por tipo
   List<dynamic> filterByType(List<dynamic> pokemons, String type) {
@@ -79,9 +151,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                 setState(() { // El estado interno de un widget ha cambiado, reconstruimos
                   _searchQuery = value; // Actualiza la consulta de busqueda
                   if (_originalPokemons != null) {
-                    //_filteredPokemons = filterByType(_originalPokemons!, _filterType);
-                    _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                    //_filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
+                    _Pokemons = filterPokemons(_originalPokemons!);
                   }
                   _scrollController.jumpTo(0); // Volver al inicio de la lista
                 });
@@ -151,8 +221,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           _filterType = newValue!;
                           if (_originalPokemons != null) {
                             _filteredPokemons = filterByType(_originalPokemons!, _filterType);
-                            //_filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                            //_filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
+                            _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
+                            _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
                           }
                           _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
@@ -212,36 +282,45 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             child: Query(
               options: QueryOptions(
                 document: gql(getPokemonList),
+                variables: {
+                  'limit': _limit,
+                  'offset': _offset,
+                },
               ),
-              builder: (QueryResult result,
-                  {VoidCallback? refetch, FetchMore? fetchMore}) {
+              builder: (QueryResult result, {VoidCallback? refetch, FetchMore? fetchMore}) {
                 if (result.hasException) {
                   return Center(child: Text(result.exception.toString()));
                 }
 
-                if (result.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                if (result.isLoading && _Pokemons.isEmpty) {
+                  return Center(child: CircularProgressIndicator());
                 }
 
-                _originalPokemons = result.data?['pokemon_v2_pokemon'];
+                /*
+                if (_offset == 0) {
+                  _Pokemons = result.data?['pokemon_v2_pokemon'] ?? [];
+                  _totalPokemons = result.data?['pokemon_v2_pokemon_aggregate']['aggregate']['count'] ?? 0;
+                } else {
+                  _Pokemons.addAll(result.data?['pokemon_v2_pokemon'] ?? []);
+                }
 
-                // Filtrar por tipo
+                _originalPokemons = List.from(_Pokemons);
+
                 _filteredPokemons = filterByType(_originalPokemons!, _filterType);
-
-                // Filtrar por búsqueda
                 _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-
-                // Filtrar por generación
                 _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
-
+                */
                 return ListView.builder(
                   controller: _scrollController, // Usa el controlador de scroll
-                  itemCount: _filteredPokemons?.length ?? 0,
+                  itemCount: _Pokemons.length,
                   itemBuilder: (context, index) {
-                    if (_filteredPokemons == null || _filteredPokemons!.isEmpty) {
+                    if (_Pokemons == null || _Pokemons!.isEmpty) {
                       return const Center(child: Text('No Pokémon found'));
                     }
-                    var pokemon = _filteredPokemons![index];
+                    if (index == _Pokemons!.length - 1 && _isLoadingMore) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    var pokemon = _Pokemons![index];
                     String pokemonName = pokemon['name'].toUpperCase();
                     if (pokemonName.length > 12) {
                       pokemonName = '${pokemonName.substring(0, 12)}...';

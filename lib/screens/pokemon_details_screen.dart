@@ -13,6 +13,13 @@ class PokemonDetailsScreen extends StatefulWidget {
 
 class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
   bool _visible = false;
+  int _limit = 20;
+  int _offset = 0;
+  List<dynamic> _moves = [];
+  bool _isLoadingMore = false;
+  int _totalMoves = 0;
+  ScrollController _scrollController = ScrollController();
+  FetchMore? fetchMore;
 
   @override
   void initState() {
@@ -22,15 +29,66 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
         _visible = true;
       });
     });
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent &&
+          !_isLoadingMore &&
+          _moves.length < _totalMoves) {
+        _loadMoreMoves(fetchMore);
+      }
+    });
   }
 
-  void _navigateToPokemon(int id) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PokemonDetailsScreen(id: id),
-      ),
-    );
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMoreMoves(FetchMore? fetchMore) async {
+    if (_isLoadingMore || _moves.length >= _totalMoves) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    if (fetchMore != null) {
+      final fetchMoreOptions = FetchMoreOptions(
+        variables: {'id': widget.id, 'limit': _limit, 'offset': _offset + _limit},
+        updateQuery: (previousResultData, fetchMoreResultData) {
+          if (fetchMoreResultData == null || fetchMoreResultData['pokemon_v2_pokemon_by_pk'] == null) {
+            return previousResultData;
+          }
+
+          final newMoves = fetchMoreResultData['pokemon_v2_pokemon_by_pk']['pokemon_v2_pokemonmoves'] ?? [];
+          _moves.addAll(newMoves);
+          _offset += _limit;
+
+          return {
+            ...previousResultData ?? {},
+            'pokemon_v2_pokemon_by_pk': {
+              ...(previousResultData?['pokemon_v2_pokemon_by_pk'] ?? {}),
+              'pokemon_v2_pokemonmoves': [
+                ...(previousResultData?['pokemon_v2_pokemon_by_pk']?['pokemon_v2_pokemonmoves'] ?? []),
+                ...newMoves,
+              ],
+            },
+          };
+        },
+      );
+
+      try {
+        await fetchMore(fetchMoreOptions);
+      } catch (e) {
+        print('Error fetching more moves: $e');
+      }
+    }
+
+    setState(() {
+      _isLoadingMore = false;
+    });
   }
 
   @override
@@ -43,23 +101,27 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
       body: Query(
         options: QueryOptions(
           document: gql(getPokemonDetails),
-          variables: {'id': widget.id},
+          variables: {'id': widget.id, 'limit': _limit, 'offset': 0},
         ),
         builder: (QueryResult result, {VoidCallback? refetch, FetchMore? fetchMore}) {
           if (result.hasException) {
             return Center(child: Text(result.exception.toString()));
           }
 
-          if (result.isLoading) {
+          if (result.isLoading && _moves.isEmpty) {
             return Center(child: CircularProgressIndicator());
           }
 
           var pokemon = result.data?['pokemon_v2_pokemon_by_pk'];
-          var evolutions = pokemon['pokemon_v2_pokemonspecy']['pokemon_v2_evolutionchain']['pokemon_v2_pokemonspecies'];
+          if (pokemon == null) {
+            return Center(child: Text('Pokemon data not found'));
+          }
+
+          var evolutions = pokemon['pokemon_v2_pokemonspecy']?['pokemon_v2_evolutionchain']?['pokemon_v2_pokemonspecies'] ?? [];
 
           // Procesar las evoluciones para incluir la información de las evoluciones siguientes
           for (var evolution in evolutions) {
-            evolution['evolves_to'] = evolution['evolves_to'].map((evo) => evo).toList();
+            evolution['evolves_to'] = evolution['evolves_to']?.map((evo) => evo).toList() ?? [];
           }
 
           // Construir el árbol de evoluciones
@@ -68,6 +130,24 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           // Ordenar las evoluciones por ID
           evolutions.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
 
+          // Fetch the total number of moves
+          _totalMoves = pokemon['pokemon_v2_pokemonmoves_aggregate']['aggregate']['count'] ?? 0;
+
+          // Fetch the initial moves
+          _moves = pokemon['pokemon_v2_pokemonmoves'] ?? [];
+
+          if (_scrollController.hasListeners) {
+            _scrollController.dispose();
+            _scrollController = ScrollController();
+            _scrollController.addListener(() {
+              if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent &&
+                  !_isLoadingMore &&
+                  _moves.length < _totalMoves) {
+                _loadMoreMoves(fetchMore);
+              }
+            });
+          }
+
           return AnimatedOpacity(
             opacity: _visible ? 1.0 : 0.0,
             duration: Duration(milliseconds: 500),
@@ -75,6 +155,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
               children: [
                 Positioned.fill(
                   child: CustomScrollView(
+                    controller: _scrollController,
                     slivers: [
                       SliverToBoxAdapter(
                         child: Padding(
@@ -98,7 +179,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                                             height: 100,
                                             decoration: BoxDecoration(
                                               image: DecorationImage(
-                                                image: AssetImage('assets/background_list/' + pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name'] + '.png'),
+                                                image: AssetImage('assets/background_list/' + (pokemon['pokemon_v2_pokemontypes']?[0]?['pokemon_v2_type']?['name'] ?? 'default') + '.png'),
                                                 fit: BoxFit.cover,
                                               ),
                                             ),
@@ -134,12 +215,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
                                         Image.asset(
-                                          '${'assets/types_large/' + pokemon['pokemon_v2_pokemontypes'][0]['pokemon_v2_type']['name']}.png',
+                                          '${'assets/types_large/' + (pokemon['pokemon_v2_pokemontypes']?[0]?['pokemon_v2_type']?['name'] ?? 'default')}.png',
                                           height: 32,
                                           width: 100,
                                         ),
                                         const SizedBox(width: 0), // Espacio entre las imagenes
-                                        if (pokemon['pokemon_v2_pokemontypes'].length == 2)
+                                        if (pokemon['pokemon_v2_pokemontypes']?.length == 2)
                                           Image.asset(
                                             'assets/types_large/${pokemon['pokemon_v2_pokemontypes'][1]['pokemon_v2_type']['name']}.png',
                                             height: 32,
@@ -162,12 +243,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                               const SizedBox(height: 0),
                               _buildInfoContainer(
                                 'Stats',
-                                pokemon['pokemon_v2_pokemonstats'].map((stat) => '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}').join('\n'),
+                                pokemon['pokemon_v2_pokemonstats']?.map((stat) => '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}').join('\n') ?? '',
                               ),
                               const SizedBox(height: 20),
                               _buildInfoContainer(
                                 'Abilities',
-                                pokemon['pokemon_v2_pokemonabilities'],
+                                pokemon['pokemon_v2_pokemonabilities'] ?? [],
                               ),
                               const SizedBox(height: 20),
                               _buildInfoContainer(
@@ -177,8 +258,10 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                               const SizedBox(height: 20),
                               _buildInfoContainer(
                                 'Moves',
-                                pokemon['pokemon_v2_pokemonmoves'],
+                                _moves,
                               ),
+                              if (_isLoadingMore)
+                                Center(child: CircularProgressIndicator()),
                             ],
                           ),
                         ),
@@ -194,7 +277,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                     icon: Icon(Icons.arrow_back),
                     onPressed: () {
                       if (widget.id > 1) {
-                        _navigateToPokemon(widget.id - 1);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PokemonDetailsScreen(id: widget.id - 1),
+                          ),
+                        );
                       }
                     },
                   ),
@@ -206,7 +294,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                   child: IconButton(
                     icon: Icon(Icons.arrow_forward),
                     onPressed: () {
-                      _navigateToPokemon(widget.id + 1);
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PokemonDetailsScreen(id: widget.id + 1),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -245,12 +338,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           else if (title == 'Evolutions')
             Center(child: content)
           else if (title == 'Abilities')
-              _buildAbilitiesList(content)
+              _buildAbilitiesList(content ?? []) // Asegúrate de que content no sea null
             else if (title == 'Moves')
-                _buildMovesList(content)
+                _buildMovesList(content ?? []) // Asegúrate de que content no sea null
               else
                 Text(
-                  content,
+                  content ?? 'No content available', // Asegúrate de que content no sea null
                   style: const TextStyle(fontSize: 16),
                 ),
         ],
@@ -380,14 +473,21 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ability['pokemon_v2_ability']['name'],
+              ability['pokemon_v2_ability']?['name'] ?? 'Unknown Ability',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
-            Text(
-              ability['pokemon_v2_ability']['pokemon_v2_abilityeffecttexts'][0]['effect'],
-              style: const TextStyle(fontSize: 14),
-            ),
+            if (ability['pokemon_v2_ability']?['pokemon_v2_abilityeffecttexts'] != null &&
+                ability['pokemon_v2_ability']['pokemon_v2_abilityeffecttexts'].isNotEmpty)
+              Text(
+                ability['pokemon_v2_ability']['pokemon_v2_abilityeffecttexts'][0]['effect'] ?? 'No description available',
+                style: const TextStyle(fontSize: 14),
+              )
+            else
+              const Text(
+                'No description available',
+                style: TextStyle(fontSize: 14),
+              ),
             const SizedBox(height: 10),
           ],
         );
@@ -398,36 +498,117 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
   Widget _buildMovesList(List<dynamic> moves) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: moves.map((move) {
-        final moveData = move['pokemon_v2_move'];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              moveData['name'],
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      children: [
+        // Fila de encabezados
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'Name',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Text(
+                  'PP',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Text(
+                  'Acc',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Text(
+                  'Pow',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Text(
+                  'Type',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Lista de movimientos
+        ...moves.map((move) {
+          final moveData = move['pokemon_v2_move'];
+          return Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      moveData?['name'] ?? 'Unknown Move',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      '${moveData?['pp'] ?? 'N/A'}',
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      '${moveData?['accuracy'] ?? 'N/A'}',
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      '${moveData?['power'] ?? 'N/A'}',
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      moveData?['pokemon_v2_movedamageclass']?['name'] ?? 'N/A',
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              'Accuracy: ${moveData['accuracy'] ?? 'N/A'}',
-              style: const TextStyle(fontSize: 14),
-            ),
-            Text(
-              'Power: ${moveData['power'] ?? 'N/A'}',
-              style: const TextStyle(fontSize: 14),
-            ),
-            Text(
-              'PP: ${moveData['pp'] ?? 'N/A'}',
-              style: const TextStyle(fontSize: 14),
-            ),
-            Text(
-              'Damage Type: ${moveData['pokemon_v2_movedamageclass']?['name'] ?? 'N/A'}',
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 10),
-          ],
-        );
-      }).toList(),
+          );
+        }).toList(),
+        if (_isLoadingMore)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+      ],
     );
   }
 }
