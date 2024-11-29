@@ -116,7 +116,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       return pokemons;
     }
     return pokemons.where((pokemon) {
-      return pokemon['name'].toLowerCase().contains(query.toLowerCase());
+      bool byName = pokemon['name'].toLowerCase().contains(query.toLowerCase());
+      bool byNumber = pokemon['id'].toString().contains(query);
+      return byName || byNumber;
     }).toList();
   }
 
