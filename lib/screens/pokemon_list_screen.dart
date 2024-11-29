@@ -3,34 +3,33 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../queries.dart';
 import 'pokemon_details_screen.dart';
 
-// Clase principal que define la pantalla de lista de Pokémon como un StatefulWidget
 class PokemonListScreen extends StatefulWidget {
   @override
   _PokemonListScreenState createState() => _PokemonListScreenState();
 }
 
-// Estado de la pantalla de lista de Pokémon
 class _PokemonListScreenState extends State<PokemonListScreen> {
-  String _filterType = ''; // Tipo de Pokemon seleccionado para filtrar
-  int _filterGeneration = 0; // Generación de Pokemon seleccionada para filtrar
-  String _searchQuery = ''; // Consulta de busqueda ingresada por el usuario
-  List<dynamic>? _originalPokemons; // Lista original de Pokémon obtenida de la API
-  List<dynamic>? _filteredPokemons; // Lista filtrada de Pokémon según los criterios de busqueda y filtro
-  ScrollController _scrollController = ScrollController(); // Controlador de scroll para manejar el desplazamiento de la lista
-  final TextEditingController _searchController = TextEditingController(); // Controlador de texto para la barra de búsqueda
+  String _filterType = '';
+  int _filterGeneration = 0;
+  String _searchQuery = '';
+  List<dynamic>? _originalPokemons;
+  List<dynamic>? _filteredPokemons;
+  ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   int _limit = 20;
   int _offset = 0;
   List<dynamic> _Pokemons = [];
   bool _isLoadingMore = false;
   int _totalPokemons = 0;
   FetchMore? fetchMore;
+  Future<void>? _fetchPokemonsFuture;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _fetchPokemons();
+    _fetchPokemonsFuture = _fetchPokemons();
   }
 
   void _onScroll() {
@@ -42,11 +41,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchPokemons();
+    _fetchPokemonsFuture = _fetchPokemons();
   }
 
   Future<void> _fetchPokemons() async {
-    // Ensure context is used after didChangeDependencies
     GraphQLClient client = GraphQLProvider.of(context).value;
     final result = await client.query(
       QueryOptions(
@@ -54,23 +52,36 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
         variables: {'limit': _limit, 'offset': _offset},
       ),
     );
-    if (result.hasException) {
+
+    try {
+      // Imprimir la respuesta antes de decodificarla
+      print('Response: ${result.data}');
+
+      if (result.hasException) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+        return;
+      }
+
+      setState(() {
+        if (_offset == 0) {
+          _originalPokemons = result.data?['pokemon_v2_pokemon'] ?? [];
+          _totalPokemons = result.data?['pokemon_v2_pokemon_aggregate']['aggregate']['count'] ?? 0;
+          _Pokemons = filterPokemons(_originalPokemons!);
+        } else {
+          _originalPokemons!.addAll(result.data?['pokemon_v2_pokemon'] ?? []);
+          _Pokemons = filterPokemons(_originalPokemons!);
+        }
+        _isLoadingMore = false;
+      });
+    } on FormatException catch (e) {
+      print('FormatException: $e');
+      // Manejar la excepción de manera adecuada
       setState(() {
         _isLoadingMore = false;
       });
-      return;
     }
-    setState(() {
-      if (_offset == 0) {
-        _originalPokemons = result.data?['pokemon_v2_pokemon'] ?? [];
-        _totalPokemons = result.data?['pokemon_v2_pokemon_aggregate']['aggregate']['count'] ?? 0;
-        _Pokemons = List.from(_originalPokemons!);
-      } else {
-        _originalPokemons!.addAll(result.data?['pokemon_v2_pokemon'] ?? []);
-        _Pokemons = filterPokemons(_originalPokemons!);
-      }
-      _isLoadingMore = false;
-    });
   }
 
   Future<void> _loadMorePokemons() async {
@@ -91,7 +102,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     return filtered;
   }
 
-  // Filtrar la lista de Pokemon por tipo
   List<dynamic> filterByType(List<dynamic> pokemons, String type) {
     if (type.isEmpty) {
       return pokemons;
@@ -101,7 +111,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }).toList();
   }
 
-  // Filtrar la lista de Pokémon por la consulta de busqueda
   List<dynamic> filterBySearchQuery(List<dynamic> pokemons, String query) {
     if (query.isEmpty) {
       return pokemons;
@@ -111,7 +120,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }).toList();
   }
 
-  // Función para filtrar la lista de Pokémon por generación
   List<dynamic> filterByGeneration(List<dynamic> pokemons, int generation) {
     if (generation == 0) {
       return pokemons;
@@ -119,6 +127,29 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     return pokemons.where((pokemon) {
       return pokemon['pokemon_v2_pokemonspecy']['generation_id'] == generation;
     }).toList();
+  }
+
+  Future<void> _applyFilters() async {
+    setState(() {
+      _offset = 0;
+      _limit = 50;
+      _originalPokemons = [];
+      _Pokemons = [];
+    });
+    _fetchPokemonsFuture = _fetchPokemons();
+
+    // Cargar más Pokémon hasta que se alcance el total o se carguen 50
+    while (_Pokemons.length < 50 && _Pokemons.length < _totalPokemons) {
+      await _loadMorePokemons();
+    }
+
+    // Asegurarse de que el último Pokémon se cargue
+    if (_Pokemons.length < _totalPokemons) {
+      await _loadMorePokemons();
+    }
+
+    // Ir al comienzo de la lista después de aplicar los filtros
+    _scrollController.jumpTo(0);
   }
 
   @override
@@ -134,8 +165,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
-              controller: _searchController, // Controlador de texto para la barra de busqueda
-              cursorColor: Colors.red, // Cambiar el color del cursor a rojo
+              controller: _searchController,
+              cursorColor: Colors.red,
               decoration: InputDecoration(
                 hintText: 'Search for a pokemon...',
                 prefixIcon: const Icon(Icons.search, color: Colors.red),
@@ -147,14 +178,11 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                   borderSide: const BorderSide(color: Colors.red),
                 ),
               ),
-              onChanged: (value) { // Se esta intentando buscar un pokemon
-                setState(() { // El estado interno de un widget ha cambiado, reconstruimos
-                  _searchQuery = value; // Actualiza la consulta de busqueda
-                  if (_originalPokemons != null) {
-                    _Pokemons = filterPokemons(_originalPokemons!);
-                  }
-                  _scrollController.jumpTo(0); // Volver al inicio de la lista
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
                 });
+                _applyFilters();
               },
             ),
           ),
@@ -168,7 +196,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
               children: [
                 Flexible(
                   child: Container(
-                    height: 40,// Ajustamos el ancho del dropdown
+                    height: 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8.0),
                       border: Border.all(color: Colors.grey),
@@ -176,8 +204,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                     child: DropdownButton<String>(
                       value: _filterType,
                       hint: const Text('Tipo', style: TextStyle(color: Colors.grey)),
-                      underline: Container(), // Elimina la línea debajo del dropdown
-                      isExpanded: true, // Permite que el dropdown se expanda
+                      underline: Container(),
+                      isExpanded: true,
                       items: <String>[
                         '',
                         'normal',
@@ -208,7 +236,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image: value.isEmpty
-                                    ? const AssetImage('assets/types_large/all.png') // Imagen para valor nulo
+                                    ? const AssetImage('assets/types_large/all.png')
                                     : AssetImage('assets/types_large/$value.png'),
                                 fit: BoxFit.cover,
                               ),
@@ -219,13 +247,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       onChanged: (String? newValue) {
                         setState(() {
                           _filterType = newValue!;
-                          if (_originalPokemons != null) {
-                            _filteredPokemons = filterByType(_originalPokemons!, _filterType);
-                            _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                            _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
-                          }
-                          _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
+                        _applyFilters();
                       },
                     ),
                   ),
@@ -241,8 +264,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                     child: DropdownButton<int>(
                       value: _filterGeneration,
                       hint: const Text('Generación', style: TextStyle(color: Colors.grey)),
-                      underline: Container(), // Elimina la línea debajo del dropdown
-                      isExpanded: true, // Permite que el dropdown se expanda
+                      underline: Container(),
+                      isExpanded: true,
                       items: <int>[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                           .map<DropdownMenuItem<int>>((int value) {
                         return DropdownMenuItem<int>(
@@ -253,7 +276,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image: value == 0
-                                    ? const AssetImage('assets/types_large/all.png') // Imagen para valor nulo
+                                    ? const AssetImage('assets/types_large/all.png')
                                     : AssetImage('assets/generations/gen$value.png'),
                                 fit: BoxFit.cover,
                               ),
@@ -264,13 +287,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       onChanged: (int? newValue) {
                         setState(() {
                           _filterGeneration = newValue!;
-                          if (_originalPokemons != null) {
-                            _filteredPokemons = filterByType(_originalPokemons!, _filterType);
-                            _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                            _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
-                          }
-                          _scrollController.jumpTo(0); // Vuelve al inicio de la lista
                         });
+                        _applyFilters();
                       },
                     ),
                   ),
@@ -279,47 +297,25 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             ),
           ),
           Expanded(
-            child: Query(
-              options: QueryOptions(
-                document: gql(getPokemonList),
-                variables: {
-                  'limit': _limit,
-                  'offset': _offset,
-                },
-              ),
-              builder: (QueryResult result, {VoidCallback? refetch, FetchMore? fetchMore}) {
-                if (result.hasException) {
-                  return Center(child: Text(result.exception.toString()));
-                }
-
-                if (result.isLoading && _Pokemons.isEmpty) {
+            child: FutureBuilder(
+              future: _fetchPokemonsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
-
-                /*
-                if (_offset == 0) {
-                  _Pokemons = result.data?['pokemon_v2_pokemon'] ?? [];
-                  _totalPokemons = result.data?['pokemon_v2_pokemon_aggregate']['aggregate']['count'] ?? 0;
-                } else {
-                  _Pokemons.addAll(result.data?['pokemon_v2_pokemon'] ?? []);
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
-
-                _originalPokemons = List.from(_Pokemons);
-
-                _filteredPokemons = filterByType(_originalPokemons!, _filterType);
-                _filteredPokemons = filterBySearchQuery(_filteredPokemons!, _searchQuery);
-                _filteredPokemons = filterByGeneration(_filteredPokemons!, _filterGeneration);
-                */
                 return ListView.builder(
-                  controller: _scrollController, // Usa el controlador de scroll
+                  controller: _scrollController,
                   itemCount: _Pokemons.length,
                   itemBuilder: (context, index) {
                     if (_Pokemons == null || _Pokemons!.isEmpty) {
                       return const Center(child: Text('No Pokémon found'));
                     }
-                    if (index == _Pokemons!.length - 1 && _isLoadingMore) {
+                    /*if (index == _Pokemons!.length - 1 && _isLoadingMore) {
                       return const Center(child: CircularProgressIndicator());
-                    }
+                    }*/
                     var pokemon = _Pokemons![index];
                     String pokemonName = pokemon['name'].toUpperCase();
                     if (pokemonName.length > 12) {
@@ -332,7 +328,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           PageRouteBuilder(
                             pageBuilder: (context, animation, secondaryAnimation) => PokemonDetailsScreen(id: pokemon['id']),
                             transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              var begin = const Offset(1.0, 0.0); // Comienza desde la derecha
+                              var begin = const Offset(1.0, 0.0);
                               var end = Offset.zero;
                               var curve = Curves.ease;
                               var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
@@ -404,7 +400,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                                       CircleAvatar(
                                         radius: 30,
                                         backgroundImage: NetworkImage(
-                                          'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon['id']}.png',
+                                          'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon['id']}.png',
                                         ),
                                         backgroundColor: Colors.white,
                                       ),

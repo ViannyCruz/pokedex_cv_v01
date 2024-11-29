@@ -192,7 +192,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                                               radius: 70,
                                               backgroundColor: const Color(0xFFFAFAFA),
                                               backgroundImage: NetworkImage(
-                                                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon['id']}.png',
+                                                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon['id']}.png',
                                               ),
                                             ),
                                           ),
@@ -338,12 +338,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           else if (title == 'Evolutions')
             Center(child: content)
           else if (title == 'Abilities')
-              _buildAbilitiesList(content ?? []) // Asegúrate de que content no sea null
+              _buildAbilitiesList(content ?? [])
             else if (title == 'Moves')
-                _buildMovesList(content ?? []) // Asegúrate de que content no sea null
+                _buildMovesList(content ?? [])
               else
                 Text(
-                  content ?? 'No content available', // Asegúrate de que content no sea null
+                  content ?? 'No content available',
                   style: const TextStyle(fontSize: 16),
                 ),
         ],
@@ -440,7 +440,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
               shape: BoxShape.circle,
               image: DecorationImage(
                 image: NetworkImage(
-                  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${evolution['id']}.png',
+                  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${evolution['id']}.png',
                 ),
                 fit: BoxFit.contain,
               ),
