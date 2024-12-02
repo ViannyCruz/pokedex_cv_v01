@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../queries.dart';
 import 'pokemon_details_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../PokeballImage.dart';
 
 class PokemonListScreen extends StatefulWidget {
   @override
   _PokemonListScreenState createState() => _PokemonListScreenState();
 }
+
+enum FavoriteFilter { all, favorites }
 
 class _PokemonListScreenState extends State<PokemonListScreen> {
   String _filterType = '';
@@ -23,13 +27,15 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   int _totalPokemons = 0;
   FetchMore? fetchMore;
   Future<void>? _fetchPokemonsFuture;
+  List<int> _favoritePokemons = [];
+  FavoriteFilter _favoriteFilter = FavoriteFilter.all;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _fetchPokemonsFuture = _fetchPokemons();
+    _loadFavorites(); // Cargar los favoritos al iniciar la aplicación
   }
 
   void _onScroll() {
@@ -41,7 +47,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchPokemonsFuture = _fetchPokemons();
+    // Ensure _fetchPokemonsFuture is not initialized multiple times
+    if (_fetchPokemonsFuture == null) {
+      _fetchPokemonsFuture = _fetchPokemons();
+    }
   }
 
   Future<void> _fetchPokemons() async {
@@ -99,6 +108,11 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     List<dynamic> filtered = filterByType(pokemons, _filterType);
     filtered = filterBySearchQuery(filtered, _searchQuery);
     filtered = filterByGeneration(filtered, _filterGeneration);
+
+    if (_favoriteFilter == FavoriteFilter.favorites) {
+      filtered = filtered.where((pokemon) => _favoritePokemons.contains(pokemon['id'])).toList();
+    }
+
     return filtered;
   }
 
@@ -152,6 +166,35 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
     // Ir al comienzo de la lista después de aplicar los filtros
     _scrollController.jumpTo(0);
+  }
+
+  Future<void> _loadFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _favoritePokemons = prefs.getStringList('favoritePokemons')?.map((id) => int.parse(id)).toList() ?? [];
+    });
+  }
+
+  Future<void> _saveFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favoritePokemons', _favoritePokemons.map((id) => id.toString()).toList());
+  }
+
+  void _toggleFavorite(int pokemonId) {
+    setState(() {
+      if (_favoritePokemons.contains(pokemonId)) {
+        _favoritePokemons.remove(pokemonId);
+      } else {
+        _favoritePokemons.add(pokemonId);
+      }
+    });
+    _saveFavorites();
+  }
+
+  String getPokeballImage(int pokemonId) {
+    return _favoritePokemons.contains(pokemonId)
+        ? "assets/general/red_pokeball.png"
+        : "assets/general/white_pokeball.png";
   }
 
   @override
@@ -295,6 +338,34 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0),
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: DropdownButton<FavoriteFilter>(
+                      value: _favoriteFilter,
+                      hint: const Text('Favoritos', style: TextStyle(color: Colors.grey)),
+                      underline: Container(),
+                      isExpanded: true,
+                      items: FavoriteFilter.values.map<DropdownMenuItem<FavoriteFilter>>((FavoriteFilter value) {
+                        return DropdownMenuItem<FavoriteFilter>(
+                          value: value,
+                          child: Text(value == FavoriteFilter.all ? 'Todos' : 'Favoritos'),
+                        );
+                      }).toList(),
+                      onChanged: (FavoriteFilter? newValue) {
+                        setState(() {
+                          _favoriteFilter = newValue!;
+                        });
+                        _applyFilters();
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -377,18 +448,12 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                               top: 8,
                               right: 14,
                               child: GestureDetector(
-                                onTap: () { // Al pulsar la pokeball
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('ID: ${pokemon['id']}'),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
+                                onTap: () {
+                                  _toggleFavorite(pokemon['id']);
                                 },
-                                child: const CircleAvatar(
-                                  radius: 15,
-                                  backgroundImage: AssetImage("assets/general/white_pokeball.png"),
-                                  backgroundColor: Colors.transparent,
+                                child: PokeballImage(
+                                  pokemonId: pokemon['id'],
+                                  favoritePokemons: _favoritePokemons,
                                 ),
                               ),
                             ),
