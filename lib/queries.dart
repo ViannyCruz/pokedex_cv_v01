@@ -85,3 +85,19 @@ query GetPokemonDetails($id: Int!, $limit: Int!, $offset: Int!) {
   }
 }
 ''';
+
+const String getPokemonName = '''
+  query GetPokemonName(\$id: Int!) {
+    pokemon_v2_pokemon_by_pk(id: \$id) {
+      name
+    }
+  }
+''';
+
+const String getPokemonNames = '''
+  query GetPokemonNames(\$ids: [Int!]!) {
+    pokemon_v2_pokemon(where: {id: {_in: \$ids}}) {
+      name
+    }
+  }
+''';

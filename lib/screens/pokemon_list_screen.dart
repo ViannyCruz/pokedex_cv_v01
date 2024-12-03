@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../queries.dart';
+import 'WhosThatPokemonScreen.dart';
 import 'pokemon_details_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../PokeballImage.dart';
@@ -213,6 +214,26 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
         title: const Text('POKEDEX', style: TextStyle(
             color: Colors.red, fontWeight: FontWeight.bold, fontSize: 25),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(_favoriteFilter == FavoriteFilter.all ? Icons.favorite_border : Icons.favorite, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _favoriteFilter = _favoriteFilter == FavoriteFilter.all ? FavoriteFilter.favorites : FavoriteFilter.all;
+              });
+              _applyFilters();
+            },
+          ),
+          IconButton(
+            icon: Icon(_sortType == SortType.indice ? Icons.sort_by_alpha : Icons.sort, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _sortType = _sortType == SortType.indice ? SortType.name : SortType.indice;
+              });
+              _applyFilters();
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58.0),
           child: Padding(
@@ -340,62 +361,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       onChanged: (int? newValue) {
                         setState(() {
                           _filterGeneration = newValue!;
-                        });
-                        _applyFilters();
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(color: Colors.grey),
-                    ),
-                    child: DropdownButton<FavoriteFilter>(
-                      value: _favoriteFilter,
-                      hint: const Text('Favoritos', style: TextStyle(color: Colors.grey)),
-                      underline: Container(),
-                      isExpanded: true,
-                      items: FavoriteFilter.values.map<DropdownMenuItem<FavoriteFilter>>((FavoriteFilter value) {
-                        return DropdownMenuItem<FavoriteFilter>(
-                          value: value,
-                          child: Text(value == FavoriteFilter.all ? 'Todos' : 'Favoritos'),
-                        );
-                      }).toList(),
-                      onChanged: (FavoriteFilter? newValue) {
-                        setState(() {
-                          _favoriteFilter = newValue!;
-                        });
-                        _applyFilters();
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(color: Colors.grey),
-                    ),
-                    child: DropdownButton<SortType>(
-                      value: _sortType,
-                      hint: const Text('Ordenar por', style: TextStyle(color: Colors.grey)),
-                      underline: Container(),
-                      isExpanded: true,
-                      items: SortType.values.map<DropdownMenuItem<SortType>>((SortType value) {
-                        return DropdownMenuItem<SortType>(
-                          value: value,
-                          child: Text(value == SortType.indice ? 'Índice' : 'Nombre'),
-                        );
-                      }).toList(),
-                      onChanged: (SortType? newValue) {
-                        setState(() {
-                          _sortType = newValue!;
                         });
                         _applyFilters();
                       },
@@ -562,6 +527,17 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => WhosThatPokemonScreen()),
+          );
+        },
+        child: Icon(Icons.gamepad), // Icono de juego
+        backgroundColor: Colors.red, // Color de fondo del botón
+      ),
     );
   }
 }
+

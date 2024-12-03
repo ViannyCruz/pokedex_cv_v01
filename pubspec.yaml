@@ -79,6 +79,7 @@ flutter:
     - assets/background_list/fairy.png
     - assets/general/white_pokeball.png
     - assets/general/red_pokeball.png
+    - assets/general/bgPoke.png
     - assets/types_icons/normal.png
     - assets/types_icons/fire.png
     - assets/types_icons/water.png
