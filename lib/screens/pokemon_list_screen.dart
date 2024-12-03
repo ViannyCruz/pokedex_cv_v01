@@ -11,6 +11,7 @@ class PokemonListScreen extends StatefulWidget {
 }
 
 enum FavoriteFilter { all, favorites }
+enum SortType { indice, name }
 
 class _PokemonListScreenState extends State<PokemonListScreen> {
   String _filterType = '';
@@ -29,6 +30,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   Future<void>? _fetchPokemonsFuture;
   List<int> _favoritePokemons = [];
   FavoriteFilter _favoriteFilter = FavoriteFilter.all;
+  SortType _sortType = SortType.indice;
 
   @override
   void initState() {
@@ -111,6 +113,12 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
     if (_favoriteFilter == FavoriteFilter.favorites) {
       filtered = filtered.where((pokemon) => _favoritePokemons.contains(pokemon['id'])).toList();
+    }
+
+    if(_sortType == SortType.indice){
+      filtered.sort((a, b) => a['id'].compareTo(b['id']));
+    } else if(_sortType == SortType.name){
+      filtered.sort((a, b) => a['name'].compareTo(b['name']));
     }
 
     return filtered;
@@ -360,6 +368,34 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       onChanged: (FavoriteFilter? newValue) {
                         setState(() {
                           _favoriteFilter = newValue!;
+                        });
+                        _applyFilters();
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0),
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: DropdownButton<SortType>(
+                      value: _sortType,
+                      hint: const Text('Ordenar por', style: TextStyle(color: Colors.grey)),
+                      underline: Container(),
+                      isExpanded: true,
+                      items: SortType.values.map<DropdownMenuItem<SortType>>((SortType value) {
+                        return DropdownMenuItem<SortType>(
+                          value: value,
+                          child: Text(value == SortType.indice ? 'Índice' : 'Nombre'),
+                        );
+                      }).toList(),
+                      onChanged: (SortType? newValue) {
+                        setState(() {
+                          _sortType = newValue!;
                         });
                         _applyFilters();
                       },
