@@ -1,33 +1,58 @@
-Pokedex App
-Descripción de la Aplicación
-La aplicación Pokedex es una aplicación móvil desarrollada en Flutter que permite a los 
-usuarios explorar una lista de Pokémon, ver detalles de cada Pokémon, y filtrar y ordenar 
-la lista según diferentes criterios. La aplicación está diseñada para proporcionar una 
-experiencia de usuario intuitiva y atractiva, con una interfaz de usuario clara y fácil
-de usar. Los usuarios pueden navegar fácilmente por la lista de Pokémon, ver imágenes y 
-detalles de cada uno, y filtrar la lista por tipo y generación para encontrar rápidamente 
-el Pokémon que desean.
+# Pokedex App
+## Descripción
+Este proyecto es una aplicación de Pokedex desarrollada en Flutter que utiliza la API de PokeAPI para obtener información sobre Pokémon. La aplicación permite a los usuarios explorar una lista de Pokémon, ver detalles de cada Pokémon, y jugar un juego de adivinanza de Pokémon.
 
-Funcionalidades Principales
-La aplicación Pokedex ofrece una serie de funcionalidades que mejoran la experiencia del 
-usuario:
-Interfaz de Usuario: La interfaz de usuario es intuitiva y atractiva, con una lista de 
-Pokémon que muestra sus nombres, imágenes y tipos. Además, se ha creado una pantalla de 
-detalles mínimos que muestra información detallada de cada Pokémon, incluyendo nombre, 
-tipo, estadísticas, habilidades, evoluciones y movimientos.
+## Características
+Lista de Pokémon: Explora una lista de Pokémon con filtros por tipo, generación y búsqueda.
 
-Sistema de Filtrado y Ordenación: Los usuarios pueden filtrar la lista de Pokémon por 
-tipo y generación, lo que facilita la búsqueda de Pokémon específicos. La lista se 
-actualiza dinámicamente según los filtros seleccionados, proporcionando una experiencia
-de usuario fluida y eficiente.
+Detalles del Pokémon: Visualiza detalles completos de cada Pokémon, incluyendo estadísticas, habilidades, evoluciones y movimientos.
 
-Uso de GraphQL
-La aplicación Pokedex utiliza la API GraphQL de PokeAPI para obtener los datos de los 
-Pokémon. GraphQL es una alternativa eficiente y flexible a las APIs REST tradicionales, 
-ya que permite a los clientes solicitar exactamente los datos que necesitan, lo que reduce
-la sobrecarga de datos y mejora el rendimiento. La integración de GraphQL en la aplicación 
-se realiza utilizando la biblioteca graphql_flutter, que proporciona una interfaz fácil de 
-usar para realizar consultas GraphQL. Las consultas específicas para obtener la lista de 
-Pokémon y sus detalles se definen en el archivo queries.dart, y se ejecutan utilizando el 
-widget Query de graphql_flutter. Esta implementación permite una gestión eficiente de los 
-datos y una experiencia de usuario más rápida y fluida.
+Juego de Adivinanza: Juega un juego donde tienes que adivinar el nombre de un Pokémon oculto.
+
+Favoritos: Marca tus Pokémon favoritos y accede a ellos fácilmente.
+
+## Lista de Pokémon
+Filtros: Utiliza los filtros en la parte superior para filtrar por tipo y generación.
+
+Búsqueda: Usa la barra de búsqueda para encontrar un Pokémon específico por nombre o número.
+
+Favoritos: Marca un Pokémon como favorito haciendo clic en la Poké Ball en la tarjeta del Pokémon.
+
+## Detalles del Pokémon
+Estadísticas: Ver las estadísticas base del Pokémon.
+
+Habilidades: Explora las habilidades del Pokémon.
+
+Evoluciones: Ver la cadena de evolución del Pokémon.
+
+Movimientos: Lista de movimientos que el Pokémon puede aprender.
+
+## Juego de Adivinanza
+Adivina el Pokémon: Selecciona el nombre correcto del Pokémon oculto.
+
+Puntuación: Mantén un récord de tu puntuación y compáralo con tu mejor puntuación.
+
+## Archivos del Proyecto
+main.dart
+Punto de entrada de la aplicación. Configura el cliente GraphQL y lanza la aplicación.
+
+PokeballImage.dart
+Widget que muestra una Poké Ball roja o blanca dependiendo de si el Pokémon es favorito o no.
+
+queries.dart
+Contiene las consultas GraphQL utilizadas para obtener datos de la API de PokeAPI.
+
+graphql_client.dart
+Configura el cliente GraphQL para la aplicación.
+
+pokemon_details_screen.dart
+Pantalla que muestra los detalles de un Pokémon específico, incluyendo estadísticas, habilidades, evoluciones y movimientos.
+
+pokemon_list_screen.dart
+Pantalla principal que muestra una lista de Pokémon con opciones de filtrado, búsqueda y marcado de favoritos.
+
+WhosThatPokemonScreen.dart
+Pantalla del juego "¿Quién es ese Pokémon?" donde el usuario debe adivinar el nombre de un Pokémon oculto.
+
+
+### ¡Disfruta explorando y aprendiendo sobre tus Pokémon favoritos!
