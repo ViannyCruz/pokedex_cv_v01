@@ -243,7 +243,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                               const SizedBox(height: 0),
                               _buildInfoContainer(
                                 'Stats',
-                                pokemon['pokemon_v2_pokemonstats']?.map((stat) => '${stat['pokemon_v2_stat']['name']}: ${stat['base_stat']}').join('\n') ?? '',
+                                pokemon['pokemon_v2_pokemonstats'] ?? [],
                               ),
                               const SizedBox(height: 20),
                               _buildInfoContainer(
@@ -334,7 +334,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
           ),
           const SizedBox(height: 10),
           if (title == 'Stats')
-            _buildStatsSlider(content)
+            _buildStatsTable(content)
           else if (title == 'Evolutions')
             Center(child: content)
           else if (title == 'Abilities')
@@ -351,27 +351,26 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 
-  Widget _buildStatsSlider(String content) {
-    List<String> stats = content.split('\n');
-    return Column(
-      children: stats.map((stat) {
-        List<String> parts = stat.split(': ');
-        String statName = parts[0];
-        int statValue = int.parse(parts[1]);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              statName,
-              style: const TextStyle(fontSize: 16),
-            ),
-            Slider(
-              value: statValue.toDouble(),
-              min: 0,
-              max: 255,
-              divisions: 255,
-              label: statValue.toString(),
-              onChanged: (double value) {},
+  Widget _buildStatsTable(List<dynamic> stats) {
+    return DataTable(
+      columns: const [
+        DataColumn(label: Text('Stat', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(label: Text('Value', style: TextStyle(fontWeight: FontWeight.bold))),
+        DataColumn(label: Text('Bar', style: TextStyle(fontWeight: FontWeight.bold))),
+      ],
+      rows: stats.map((stat) {
+        int statValue = stat['base_stat'];
+        String statName = stat['pokemon_v2_stat']['name'];
+        return DataRow(
+          cells: [
+            DataCell(Text(statName.toUpperCase())),
+            DataCell(Text(statValue.toString())),
+            DataCell(
+              LinearProgressIndicator(
+                value: statValue / 255,
+                backgroundColor: Colors.grey[300],
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
             ),
           ],
         );

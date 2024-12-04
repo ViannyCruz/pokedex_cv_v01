@@ -22,7 +22,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   List<dynamic>? _filteredPokemons;
   ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  int _limit = 20;
+  int _limit = 50;
   int _offset = 0;
   List<dynamic> _Pokemons = [];
   bool _isLoadingMore = false;
@@ -50,7 +50,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Ensure _fetchPokemonsFuture is not initialized multiple times
     if (_fetchPokemonsFuture == null) {
       _fetchPokemonsFuture = _fetchPokemons();
     }
