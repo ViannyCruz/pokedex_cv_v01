@@ -1,8 +1,8 @@
-Pokedex App
-Descripción
+# Pokedex App
+## Descripción
 Este proyecto es una aplicación de Pokedex desarrollada en Flutter que utiliza la API de PokeAPI para obtener información sobre Pokémon. La aplicación permite a los usuarios explorar una lista de Pokémon, ver detalles de cada Pokémon, y jugar un juego de adivinanza de Pokémon.
 
-Características
+## Características
 Lista de Pokémon: Explora una lista de Pokémon con filtros por tipo, generación y búsqueda.
 
 Detalles del Pokémon: Visualiza detalles completos de cada Pokémon, incluyendo estadísticas, habilidades, evoluciones y movimientos.
