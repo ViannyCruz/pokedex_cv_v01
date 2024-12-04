@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../../queries.dart';
 
+
 class PokemonDetailsScreen extends StatefulWidget {
   final int id;
 
+
   const PokemonDetailsScreen({Key? key, required this.id}) : super(key: key);
+
 
   @override
   _PokemonDetailsScreenState createState() => _PokemonDetailsScreenState();
 }
+
 
 class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
   bool _visible = false;
@@ -21,6 +25,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
   ScrollController _scrollController = ScrollController();
   FetchMore? fetchMore;
 
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +34,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
         _visible = true;
       });
     });
+
 
     _scrollController.addListener(() {
       if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent &&
@@ -39,20 +45,24 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     });
   }
 
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
+
   Future<void> _loadMoreMoves(FetchMore? fetchMore) async {
     if (_isLoadingMore || _moves.length >= _totalMoves) {
       return;
     }
 
+
     setState(() {
       _isLoadingMore = true;
     });
+
 
     if (fetchMore != null) {
       final fetchMoreOptions = FetchMoreOptions(
@@ -62,9 +72,11 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
             return previousResultData;
           }
 
+
           final newMoves = fetchMoreResultData['pokemon_v2_pokemon_by_pk']['pokemon_v2_pokemonmoves'] ?? [];
           _moves.addAll(newMoves);
           _offset += _limit;
+
 
           return {
             ...previousResultData ?? {},
@@ -79,6 +91,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
         },
       );
 
+
       try {
         await fetchMore(fetchMoreOptions);
       } catch (e) {
@@ -86,10 +99,12 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
       }
     }
 
+
     setState(() {
       _isLoadingMore = false;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,33 +123,42 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
             return Center(child: Text(result.exception.toString()));
           }
 
+
           if (result.isLoading && _moves.isEmpty) {
             return Center(child: CircularProgressIndicator());
           }
+
 
           var pokemon = result.data?['pokemon_v2_pokemon_by_pk'];
           if (pokemon == null) {
             return Center(child: Text('Pokemon data not found'));
           }
 
+
           var evolutions = pokemon['pokemon_v2_pokemonspecy']?['pokemon_v2_evolutionchain']?['pokemon_v2_pokemonspecies'] ?? [];
+
 
           // Procesar las evoluciones para incluir la información de las evoluciones siguientes
           for (var evolution in evolutions) {
             evolution['evolves_to'] = evolution['evolves_to']?.map((evo) => evo).toList() ?? [];
           }
 
+
           // Construir el árbol de evoluciones
           var evolutionTree = _buildEvolutionTree(evolutions);
+
 
           // Ordenar las evoluciones por ID
           evolutions.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
 
+
           // Fetch the total number of moves
           _totalMoves = pokemon['pokemon_v2_pokemonmoves_aggregate']['aggregate']['count'] ?? 0;
 
+
           // Fetch the initial moves
           _moves = pokemon['pokemon_v2_pokemonmoves'] ?? [];
+
 
           if (_scrollController.hasListeners) {
             _scrollController.dispose();
@@ -147,6 +171,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
               }
             });
           }
+
 
           return AnimatedOpacity(
             opacity: _visible ? 1.0 : 0.0,
@@ -311,6 +336,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 
+
   Widget _buildInfoContainer(String title, dynamic content) {
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -351,6 +377,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 
+
   Widget _buildStatsTable(List<dynamic> stats) {
     return DataTable(
       columns: const [
@@ -378,14 +405,17 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 
+
   List<dynamic> _buildEvolutionTree(List<dynamic> evolutions) {
     Map<int, dynamic> evolutionMap = {};
     List<dynamic> evolutionTree = [];
+
 
     // Crear un mapa de evoluciones por ID
     for (var evolution in evolutions) {
       evolutionMap[evolution['id']] = evolution;
     }
+
 
     // Construir el árbol de evoluciones
     for (var evolution in evolutions) {
@@ -397,6 +427,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
       }
     }
 
+
     // Encontrar la raíz del árbol
     for (var evolution in evolutions) {
       if (evolution['parent'] == null) {
@@ -404,8 +435,10 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
       }
     }
 
+
     return evolutionTree;
   }
+
 
   Widget _buildEvolutionChain(List<dynamic> evolutions) {
     return SingleChildScrollView(
@@ -419,6 +452,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
       ),
     );
   }
+
 
   Widget _buildEvolutionNode(dynamic evolution) {
     return GestureDetector(
@@ -464,6 +498,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 
+
   Widget _buildAbilitiesList(List<dynamic> abilities) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,6 +528,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
       }).toList(),
     );
   }
+
 
   Widget _buildMovesList(List<dynamic> moves) {
     return Column(
@@ -611,3 +647,4 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     );
   }
 }
+

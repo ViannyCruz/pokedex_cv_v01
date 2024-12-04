@@ -6,13 +6,16 @@ import 'pokemon_details_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../PokeballImage.dart';
 
+
 class PokemonListScreen extends StatefulWidget {
   @override
   _PokemonListScreenState createState() => _PokemonListScreenState();
 }
 
+
 enum FavoriteFilter { all, favorites }
 enum SortType { indice, name }
+
 
 class _PokemonListScreenState extends State<PokemonListScreen> {
   String _filterType = '';
@@ -33,6 +36,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   FavoriteFilter _favoriteFilter = FavoriteFilter.all;
   SortType _sortType = SortType.indice;
 
+
   @override
   void initState() {
     super.initState();
@@ -41,11 +45,13 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     _loadFavorites(); // Cargar los favoritos al iniciar la aplicación
   }
 
+
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !_isLoadingMore && _Pokemons.length < _totalPokemons) {
       _loadMorePokemons();
     }
   }
+
 
   @override
   void didChangeDependencies() {
@@ -54,6 +60,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       _fetchPokemonsFuture = _fetchPokemons();
     }
   }
+
 
   Future<void> _fetchPokemons() async {
     GraphQLClient client = GraphQLProvider.of(context).value;
@@ -64,9 +71,11 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       ),
     );
 
+
     try {
       // Imprimir la respuesta antes de decodificarla
       print('Response: ${result.data}');
+
 
       if (result.hasException) {
         setState(() {
@@ -74,6 +83,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
         });
         return;
       }
+
 
       setState(() {
         if (_offset == 0) {
@@ -95,6 +105,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }
   }
 
+
   Future<void> _loadMorePokemons() async {
     if (_isLoadingMore || _Pokemons.length >= _totalPokemons) {
       return;
@@ -106,14 +117,17 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     await _fetchPokemons();
   }
 
+
   List<dynamic> filterPokemons(List<dynamic> pokemons) {
     List<dynamic> filtered = filterByType(pokemons, _filterType);
     filtered = filterBySearchQuery(filtered, _searchQuery);
     filtered = filterByGeneration(filtered, _filterGeneration);
 
+
     if (_favoriteFilter == FavoriteFilter.favorites) {
       filtered = filtered.where((pokemon) => _favoritePokemons.contains(pokemon['id'])).toList();
     }
+
 
     if(_sortType == SortType.indice){
       filtered.sort((a, b) => a['id'].compareTo(b['id']));
@@ -121,8 +135,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       filtered.sort((a, b) => a['name'].compareTo(b['name']));
     }
 
+
     return filtered;
   }
+
 
   List<dynamic> filterByType(List<dynamic> pokemons, String type) {
     if (type.isEmpty) {
@@ -132,6 +148,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       return pokemon['pokemon_v2_pokemontypes'].any((typeInfo) => typeInfo['pokemon_v2_type']['name'] == type);
     }).toList();
   }
+
 
   List<dynamic> filterBySearchQuery(List<dynamic> pokemons, String query) {
     if (query.isEmpty) {
@@ -144,6 +161,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     }).toList();
   }
 
+
   List<dynamic> filterByGeneration(List<dynamic> pokemons, int generation) {
     if (generation == 0) {
       return pokemons;
@@ -152,6 +170,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       return pokemon['pokemon_v2_pokemonspecy']['generation_id'] == generation;
     }).toList();
   }
+
 
   Future<void> _applyFilters() async {
     setState(() {
@@ -162,19 +181,23 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     });
     _fetchPokemonsFuture = _fetchPokemons();
 
+
     // Cargar más Pokémon hasta que se alcance el total o se carguen 50
     while (_Pokemons.length < 50 && _Pokemons.length < _totalPokemons) {
       await _loadMorePokemons();
     }
+
 
     // Asegurarse de que el último Pokémon se cargue
     if (_Pokemons.length < _totalPokemons) {
       await _loadMorePokemons();
     }
 
+
     // Ir al comienzo de la lista después de aplicar los filtros
     _scrollController.jumpTo(0);
   }
+
 
   Future<void> _loadFavorites() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -183,10 +206,12 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     });
   }
 
+
   Future<void> _saveFavorites() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('favoritePokemons', _favoritePokemons.map((id) => id.toString()).toList());
   }
+
 
   void _toggleFavorite(int pokemonId) {
     setState(() {
@@ -199,11 +224,13 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     _saveFavorites();
   }
 
+
   String getPokeballImage(int pokemonId) {
     return _favoritePokemons.contains(pokemonId)
         ? "assets/general/red_pokeball.png"
         : "assets/general/white_pokeball.png";
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -387,8 +414,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       return const Center(child: Text('No Pokémon found'));
                     }
                     /*if (index == _Pokemons!.length - 1 && _isLoadingMore) {
-                      return const Center(child: CircularProgressIndicator());
-                    }*/
+                     return const Center(child: CircularProgressIndicator());
+                   }*/
                     var pokemon = _Pokemons![index];
                     String pokemonName = pokemon['name'].toUpperCase();
                     if (pokemonName.length > 12) {
@@ -539,4 +566,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
     );
   }
 }
+
+
 

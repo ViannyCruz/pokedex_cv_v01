@@ -4,10 +4,12 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../queries.dart';
 
+
 class WhosThatPokemonScreen extends StatefulWidget {
   @override
   _WhosThatPokemonScreenState createState() => _WhosThatPokemonScreenState();
 }
+
 
 class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
   int _pokemonId = 0;
@@ -21,6 +23,7 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
   bool _showDialog = false;
   String _dialogMessage = '';
 
+
   @override
   void initState() {
     super.initState();
@@ -28,11 +31,13 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
     _loadHighScore(); // Cargar el high score al iniciar la aplicación
   }
 
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _fetchPokemonFuture = _generateNewPokemon();
   }
+
 
   Future<void> _generateNewPokemon() async {
     setState(() {
@@ -42,13 +47,16 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
       _isImageRevealed = false;
     });
 
+
     final queryOptions = QueryOptions(
       document: gql(getPokemonName),
       variables: {'id': _pokemonId},
     );
 
+
     final client = GraphQLProvider.of(context).value;
     final result = await client.query(queryOptions);
+
 
     if (!result.hasException && result.data != null) {
       setState(() {
@@ -57,10 +65,12 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
       });
     }
 
+
     setState(() {
       _isLoading = false;
     });
   }
+
 
   void _generateOptions() async {
     List<int> incorrectIds = [];
@@ -71,13 +81,16 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
       }
     }
 
+
     final queryOptions = QueryOptions(
       document: gql(getPokemonNames),
       variables: {'ids': incorrectIds},
     );
 
+
     final client = GraphQLProvider.of(context).value;
     final result = await client.query(queryOptions);
+
 
     if (!result.hasException && result.data != null) {
       List<String> incorrectNames = List<String>.from(result.data!['pokemon_v2_pokemon'].map((pokemon) => pokemon['name']));
@@ -86,6 +99,7 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
       });
     }
   }
+
 
   void _checkAnswer(String selectedName) async {
     if (selectedName == _pokemonName) {
@@ -109,10 +123,12 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
     }
   }
 
+
   Future<void> _saveHighScore(int score) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setInt('highScore', score);
   }
+
 
   Future<void> _loadHighScore() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -121,12 +137,14 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
     });
   }
 
+
   void _closeDialog() {
     setState(() {
       _showDialog = false;
       _fetchPokemonFuture = _generateNewPokemon();
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -270,3 +288,4 @@ class _WhosThatPokemonScreenState extends State<WhosThatPokemonScreen> {
     );
   }
 }
+
